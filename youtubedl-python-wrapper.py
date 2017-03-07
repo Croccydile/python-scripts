@@ -53,11 +53,26 @@ def youtubedl_writeinfo(video):
 	write_string (bcolors.OKBLUE + 'Dislikes' + bcolors.ENDC + '    : %s\n' % (video['dislike_count']))
 	write_string (bcolors.OKBLUE + 'Duration' + bcolors.ENDC + '    : %s secs\n' % (video['duration']))	
 
-# Make sure the template has the preceeding / or \
-youtubedl_video_template = '/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - best - %(id)s.%(ext)s'
-youtubedl_playlist_template = '/%(uploader)s/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - best - %(id)s.%(ext)s'
+def youtubedl_printehelp():
+	print ('youtubedl-python-wrapper.py')
+	print ('  Required options:')
+	print ('	-u / --url <url>')
+	print ('	-d / --destination <destination folder>')
+	print ('	-r / --reslimit <resolution limit>')
+	print ('	-t / --toolpath <tool folder containing ffmpeg.exe, etc>')
+	print ('  Other options:')
+	print ('	-f / --formatext <desired source format extension>')
+	print ('	-l / --listformats <list available source formats>')
+	print ('	-h / --help <this help, duh!>')
+	print ('')
+	input ('Press enter to continue')
+	return
 
-def youtubedl_setops(config, destfolder):
+# Make sure the template has the preceeding / or \
+youtubedl_video_template = '/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(resolution)s - %(id)s.%(ext)s'
+youtubedl_playlist_template = '/%(uploader)s/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(resolution)s - %(id)s.%(ext)s'
+
+def youtubedl_setops(reslimit, formatext, destfolder):
 	postprocessors = []
 	postprocessors.append({
 		'key': 'FFmpegEmbedSubtitle',
@@ -102,49 +117,81 @@ def youtubedl_setops(config, destfolder):
 	
 	print ('Setting outtmpl: %s' % options['outtmpl'])
 	#sys.exit()
-	
-	if config in ("mp4"):
-		print ('Setting mp4 specific config values')
-		newformat = 'bestvideo[height<=1440][ext=mp4]+bestaudio[ext=m4a]/best'
-	elif config in ("webm"):
-		print ('Setting webm specific config values')
-		newformat = 'bestvideo[height<=1440][ext=webm]+bestaudio[ext=webm]/best'
-	if config in ("mp4_480p"):
-		print ('Setting mp4 480p specific config values')
-		newformat = 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best'
-	elif config in ("unrestricted"):
-		print ('Setting UNRESTRICTED specific config values')
-		newformat = 'bestvideo+bestaudio/best'
-	else:
-		# Default setting
-		print ('Setting DEFAULT config values')
-		newformat = 'bestvideo[height<=1440]+bestaudio/best[height<=1440]'
 
+	# Set requested extensions
+	if formatext in ("mp4"):
+		videoext = 'mp4'
+		audioext = 'm4a'
+	elif formatext in ("webm"):
+		videoext = 'webm'
+		audioext = 'webm'
+	
+	try:
+		videoext
+	except NameError:
+		newformat = 'bestvideo[height<=' + reslimit + ']+bestaudio/best[height<=' + reslimit + ']'
+	else:
+		newformat = 'bestvideo[height<=' + reslimit + '][ext=' + videoext + ']+bestaudio[ext=' + audioext + ']/best[ext=' + formatext + ']/best'
+		
 	print ('Setting format: %s' % newformat)
 	options['format'] = newformat
 
+	#input ('Press enter to continue...')
+	
+	#if config in ("mp4"):
+	#	print ('Setting mp4 specific config values')
+	#	newformat = 'bestvideo[height<=1440][ext=mp4]+bestaudio[ext=m4a]/best'
+	#elif config in ("webm"):
+	#	print ('Setting webm specific config values')
+	#	newformat = 'bestvideo[height<=1440][ext=webm]+bestaudio[ext=webm]/best'
+	#if config in ("mp4_480p"):
+	#	print ('Setting mp4 480p specific config values')
+	#	newformat = 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best'
+	#elif config in ("unrestricted"):
+	#	print ('Setting UNRESTRICTED specific config values')
+	#	newformat = 'bestvideo+bestaudio/best'
+	#else:
+	#	# Default setting
+	#	print ('Setting DEFAULT config values')
+	#	newformat = 'bestvideo[height<=1440]+bestaudio/best[height<=1440]'
+	
 	return options
 
 
 def main(argv):
 
+	print (argv)
 	try:
-		opts, args = getopt.getopt(argv,"hld:u:c:t:",["inputurl=", "dlconfig="])
+		options, remainder = getopt.getopt(argv, 'hlf:u:d:r:t:', ['help',
+			'listformats',
+			'formatext=',
+			'url=', 
+			'destination=',
+			'reslimit=',
+			'toolpath=',])
 	except getopt.GetoptError:
-		print ('youtubedl-wrapper.py -u <url> -c <config type>')
+		print ('getopt.GetoptError exception!')
+		
+		youtubedl_printehelp()
 		sys.exit(2)
-	for opt, arg in opts:
+
+	print ('OPTIONS   :', options)
+	print ('REMAINING :', remainder)
+		
+	for opt, arg in options:
 		if opt in ("-h", "--help"):
-			print ('youtubedl-wrapper.py -u <url> -c <config type>')
+			youtubedl_printehelp()
 			sys.exit()
 		elif opt in ("-l", "--listformats"):
 			listformats = 'true'
-		elif opt in ("-d", "--destination"):
-			destfolder = arg
+		elif opt in ("-f", "--formatext"):
+			formatext = arg
 		elif opt in ("-u", "--url"):
 			inputurl = arg
-		elif opt in ("-c", "--config"):
-			dlconfig = arg
+		elif opt in ("-d", "--destination"):
+			destfolder = arg
+		elif opt in ("-r", "--reslimit"):
+			reslimit = arg
 		elif opt in ("-t", "--toolpath"):
 			toolpath = arg
 	try: 
@@ -163,15 +210,6 @@ def main(argv):
 
 	print ('Destination folder is:', destfolder)
 
-	try: 
-		dlconfig
-	except NameError:
-		# Force  downloader config to be specified
-		print ('This wrapper script requires a downloader config specified...')
-		sys.exit(2)
-	else:
-		youtubedl_opts = youtubedl_setops(dlconfig, destfolder)
-
 	try:
 		toolpath
 	except NameError:
@@ -179,6 +217,21 @@ def main(argv):
 		sys.exit(2)
 	else:
 		os.chdir(toolpath)
+	
+	try:
+		formatext
+	except NameError:
+		# Just make the routine not care if not specified
+		formatext = 'default'
+
+	try: 
+		reslimit
+	except NameError:
+		# Assume 1080p if no resolution was specified
+		print ('No reslimit specified, defaulting to 1080p height limit')
+		reslimit = 1080
+
+	youtubedl_opts = youtubedl_setops(reslimit, formatext, destfolder)
 
 	try:
 		listformats
@@ -193,9 +246,6 @@ def main(argv):
 		)
 		sys.exit()
 
-	#print ('Config type is:', dlconfig)
-
-	youtubedl_opts
 	ydl = youtube_dl.YoutubeDL(youtubedl_opts)
 
 	with ydl:
@@ -224,7 +274,7 @@ def main(argv):
 			#	write_string ("key: %s value: %s\n" % (key, value))
 			if (result > 0):
 				print ('Uh oh! Something went wrong somewhere...')
-				input("Press Enter to continue...")
+				input('Press Enter to continue...')
 			
 			sys.exit(result)
 
