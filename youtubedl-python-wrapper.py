@@ -42,16 +42,20 @@ def youtubedl_hook(progress):
 		print (key)
 
 def youtubedl_writeinfo(video):
-	write_string (bcolors.OKBLUE + 'Title' + bcolors.ENDC + '       : %s\n' % (video['title']))
-	write_string (bcolors.OKBLUE + 'Description' + bcolors.ENDC + ' : %s\n' % (video['description']))
-	write_string (bcolors.OKBLUE + 'ID' + bcolors.ENDC + '          : %s\n' % (video['id']))
-	write_string (bcolors.OKBLUE + 'Format' + bcolors.ENDC + '      : %s\n' % (video['format']))
-	write_string (bcolors.OKBLUE + 'Uploader' + bcolors.ENDC + '    : %s\n' % (video['uploader']))
-	write_string (bcolors.OKBLUE + 'Upload date' + bcolors.ENDC + ' : %s\n' % (video['upload_date']))
-	write_string (bcolors.OKBLUE + 'Views' + bcolors.ENDC + '       : %s\n' % (video['view_count']))
-	write_string (bcolors.OKBLUE + 'Likes' + bcolors.ENDC + '       : %s\n' % (video['like_count']))
-	write_string (bcolors.OKBLUE + 'Dislikes' + bcolors.ENDC + '    : %s\n' % (video['dislike_count']))
-	write_string (bcolors.OKBLUE + 'Duration' + bcolors.ENDC + '    : %s secs\n' % (video['duration']))	
+	for key, value in video.items():
+		if key in ('title',
+			'extractor',
+			'protocol',
+			'description',
+			'id',
+			'format',
+			'uploader',
+			'upload_date',
+			'view_count',
+			'like_count',
+			'dislike_count',
+			'duration',):
+			write_string ('%s%-20s%s: %s\n' % (bcolors.WARNING, key, bcolors.ENDC, value))
 
 def youtubedl_printehelp():
 	print ('youtubedl-python-wrapper.py')
@@ -69,8 +73,8 @@ def youtubedl_printehelp():
 	return
 
 # Make sure the template has the preceeding / or \
-youtubedl_video_template = '/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(resolution)s - %(id)s.%(ext)s'
-youtubedl_playlist_template = '/%(uploader)s/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(resolution)s - %(id)s.%(ext)s'
+youtubedl_video_template = '/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(height)sp - %(id)s.%(ext)s'
+youtubedl_playlist_template = '/%(uploader)s/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(height)sp - %(id)s.%(ext)s'
 
 def youtubedl_setops(reslimit, formatext, destfolder):
 	postprocessors = []
@@ -125,7 +129,7 @@ def youtubedl_setops(reslimit, formatext, destfolder):
 	elif formatext in ("webm"):
 		videoext = 'webm'
 		audioext = 'webm'
-	
+		
 	try:
 		videoext
 	except NameError:
@@ -229,7 +233,7 @@ def main(argv):
 	except NameError:
 		# Assume 1080p if no resolution was specified
 		print ('No reslimit specified, defaulting to 1080p height limit')
-		reslimit = 1080
+		reslimit = '1080'
 
 	youtubedl_opts = youtubedl_setops(reslimit, formatext, destfolder)
 
@@ -279,5 +283,9 @@ def main(argv):
 			sys.exit(result)
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
-
+	try:
+		main(sys.argv[1:])
+	except Exception:
+		print ('Global exception occured...')
+		input ('Press Enter to continue...')
+		sys.exit(2)
