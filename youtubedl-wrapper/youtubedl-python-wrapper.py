@@ -67,7 +67,7 @@ def youtubedl_printehelp():
 	print ('  Other options:')
 	print ('	-f / --formatext <desired source format extension>')
 	print ('	-l / --listformats <list available source formats>')
-	print ('	-h / --help <this help, duh!>')
+#	print ('	-h / --help <this help, duh!>')
 	print ('')
 	input ('Press enter to continue')
 	return
@@ -202,6 +202,8 @@ def main(argv):
 		inputurl
 	except NameError:
 		print ('This wrapper script requires a url specified...')
+		print ('')
+		youtubedl_printehelp()
 		sys.exit(2)
 
 	print ('Input URL is:', inputurl)
@@ -210,6 +212,8 @@ def main(argv):
 		destfolder
 	except NameError:
 		print ('This wrapper script requires a destination folder specified...')
+		print ('')
+		youtubedl_printehelp()
 		sys.exit(2)
 
 	print ('Destination folder is:', destfolder)
@@ -218,6 +222,8 @@ def main(argv):
 		toolpath
 	except NameError:
 		print ('This wrapper script requires a folder where tools are stored...')
+		print ('')
+		youtubedl_printehelp()
 		sys.exit(2)
 	else:
 		os.chdir(toolpath)
@@ -250,7 +256,9 @@ def main(argv):
 		)
 		sys.exit()
 
+	print ('Preparing YoutubeDL object')
 	ydl = youtube_dl.YoutubeDL(youtubedl_opts)
+	ydl.add_default_info_extractors()
 
 	with ydl:
 		print ('Grabbing video/playlist information...')
@@ -267,8 +275,12 @@ def main(argv):
 				print('Video #%d: %s' % (video['playlist_index'], video['title']))
 
 		else:
-			# Just a video
+			# Just a single video
+
+			# Spam out some of the info returned
 			youtubedl_writeinfo(result)
+			# Along with the available formats
+			ydl.list_formats(result)
 		
 			# Now actually download
 			# ydl.params['simulate'] = 'true'
@@ -283,9 +295,9 @@ def main(argv):
 			sys.exit(result)
 
 if __name__ == "__main__":
-	try:
-		main(sys.argv[1:])
-	except Exception:
-		print ('Global exception occured...')
-		input ('Press Enter to continue...')
-		sys.exit(2)
+#	try:
+	main(sys.argv[1:])
+#	except Exception:
+#		print ('Global exception occured...')
+#		input ('Press Enter to continue...')
+#		sys.exit(2)
