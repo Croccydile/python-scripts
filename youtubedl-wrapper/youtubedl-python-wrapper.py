@@ -104,6 +104,9 @@ def youtubedl_setops(reslimit, formatext, destfolder):
 		'allsubtitles': 'true',
 		'embedsubtitles': 'true',
 		'fixup': 'warn',
+		# This part is important on playlists, otherwise it wastes too much time
+		# gathering information ahead of time that we probably do not want
+		'extract_flat': 'in_playlist',
 		#'writeannotations': 'true',
 		
 		'postprocessors': postprocessors,
@@ -270,9 +273,30 @@ def main(argv):
 		if 'entries' in result:
 			# Change output template to reflect playlists
 			ydl.params['outtmpl'] = destfolder + youtubedl_playlist_template
-			# Special handling for playlists
+
+			# Special handling for playlists (channel leeching)
+			# ydl.params['simulate'] = 'true'
 			for video in result['entries']:
-				print('Video #%d: %s' % (video['playlist_index'], video['title']))
+				# Spam out some of the info returned
+				#youtubedl_writeinfo(result)
+				#print (video)
+				# Along with the available formats
+				#ydl.list_formats(result)
+				#print('Video #%d: %s' % (video['playlist_index'], video['title']))
+	
+				print('Playlist video: %s' % (video['title']))
+				result = ydl.extract_info(
+					video['url'],
+					download=False # We just want to extract the info
+				)
+				# Spam out some of the info returned
+				youtubedl_writeinfo(result)
+				result = ydl.download([video['url']])
+				print ('Result given is %s' % result)
+				if (result > 0):
+					print ('Uh oh! Something went wrong somewhere...')
+					input('Press Enter to continue...')
+					sys.exit(result)
 
 		else:
 			# Just a single video
@@ -295,8 +319,8 @@ def main(argv):
 			sys.exit(result)
 
 if __name__ == "__main__":
-	try:
-		main(sys.argv[1:])
-	except Exception as ex:
-		print (ex)
-		print ('FUCK YOU ALL')
+#	try:
+	main(sys.argv[1:])
+#	except Exception as non_cuddle_exception:
+#		print (non_cuddle_exception)
+#		print ('This should not happen')
