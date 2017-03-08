@@ -295,9 +295,8 @@ def main(argv):
 			sys.exit(result)
 
 if __name__ == "__main__":
-#	try:
-	main(sys.argv[1:])
-#	except Exception:
-#		print ('Global exception occured...')
-#		input ('Press Enter to continue...')
-#		sys.exit(2)
+	try:
+		main(sys.argv[1:])
+	except Exception as ex:
+		print (ex)
+		print ('FUCK YOU ALL')
