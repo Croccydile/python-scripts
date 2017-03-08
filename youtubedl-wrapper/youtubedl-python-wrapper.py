@@ -178,9 +178,6 @@ def main(argv):
 		
 		youtubedl_printehelp()
 		sys.exit(2)
-
-	print ('OPTIONS   :', options)
-	print ('REMAINING :', remainder)
 		
 	for opt, arg in options:
 		if opt in ("-h", "--help"):
@@ -203,6 +200,9 @@ def main(argv):
 	except NameError:
 		print ('This wrapper script requires a url specified...')
 		print ('')
+		print ('  Commandline debug:')
+		print ('    OPTIONS   :', options)
+		print ('    REMAINING :', remainder)
 		youtubedl_printehelp()
 		sys.exit(2)
 
