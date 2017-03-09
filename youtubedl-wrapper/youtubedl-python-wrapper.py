@@ -79,6 +79,24 @@ def youtubedl_printehelp():
 	input ('Press enter to continue')
 	return
 
+def youtubedl_walkdict_subext(d):
+	for k, v in d.items():
+		if isinstance(v, dict):
+			# Self return to pass back value
+			return youtubedl_walkdict_subext(v)
+		else:
+			print('walkprint: {0} : {1}'.format(k, v))
+			if isinstance(v, str):
+				if v in ('json'):
+					return v
+			# More recursion hell
+			if isinstance(v, list):
+				for m in v:
+					if isinstance(m, dict):
+						# Self return to pass back value
+						return youtubedl_walkdict_subext(m)
+
+	
 # Make sure the template has the preceeding / or \
 youtubedl_video_template = '/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(height)sp - %(id)s.%(ext)s'
 youtubedl_playlist_template = '/%(uploader)s/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(height)sp - %(id)s.%(ext)s'
@@ -259,6 +277,9 @@ def main(argv):
 		elif opt in ("-t", "--toolpath"):
 			localopts['toolpath'] = arg
 
+	# CHEAT: Always set this to ture for the moment
+	localopts['postprocess'] = 'true'
+	
 	youtubedl_opts = youtubedl_setops(localopts)
 
 	print ('Preparing YoutubeDL object')
@@ -322,6 +343,23 @@ def main(argv):
 			# Along with the available formats
 			ydl.list_formats(result)
 		
+			#for key, value in result.items():
+			#	if key in ('subtitles'):
+			#		write_string ('Subtitles: %s\n' % value)
+			#		if isinstance (value, dict):
+			#			subext = youtubedl_walkdict_subext (value)
+			#			print ('Subtitles ext: %s\n' % subext) 
+			
+			for key, value in result.items():
+				if key in ('extractor'):
+					if isinstance(value, str):
+						if value.find('twitch') != -1:
+							# Remove post-processors for twitch videos
+							# Subtitle embedding wont work
+							print ('*** Removing postprocessors option for twitch extractor ***')
+							ydl.params.pop('postprocessors', None)
+			
+			sys.exit()
 			# Now actually download
 			# ydl.params['simulate'] = 'true'
 			result = ydl.download([localopts['inputurl']])
