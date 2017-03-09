@@ -58,6 +58,7 @@ def youtubedl_writeinfo(video):
 			write_string ('%s%-20s%s: %s\n' % (bcolors.WARNING, key, bcolors.ENDC, value))
 
 def youtubedl_printehelp():
+	print ('')
 	print ('youtubedl-python-wrapper.py')
 	print ('  Required options:')
 	print ('	-u / --url <url>')
@@ -67,6 +68,7 @@ def youtubedl_printehelp():
 	print ('	-r / --reslimit <resolution limit> Defaults to 1080p')
 	print ('	-f / --formatext <desired source format extension>')
 	print ('	-l / --listformats <list available source formats and exit>')
+	print ('	-p / --postprocess <attempt post processing like embed subs>')
 #	print ('	-h / --help <this help, duh!>')
 	print ('')
 	input ('Press enter to continue')
@@ -76,15 +78,41 @@ def youtubedl_printehelp():
 youtubedl_video_template = '/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(height)sp - %(id)s.%(ext)s'
 youtubedl_playlist_template = '/%(uploader)s/%(extractor)s - %(uploader)s - %(upload_date)s - %(title)s - %(height)sp - %(id)s.%(ext)s'
 
-def youtubedl_setops(reslimit, formatext, destfolder):
-	postprocessors = []
-	postprocessors.append({
-		'key': 'FFmpegEmbedSubtitle',
-	})
+def youtubedl_setops(localopts_dict):
 	external_downloader_args = compat_shlex_split('--download-result=full --summary-interval=0 --max-connection-per-server 2 --retry-wait=5')
-	#print (external_downloader_args)
-	#sys.exit()
 
+	try:
+		localopts_dict['inputurl']
+	except KeyError:
+		print ('This wrapper script requires a url specified...')
+		youtubedl_printehelp()
+		sys.exit(2)
+
+	try: 
+		localopts_dict['destfolder']
+	except KeyError:
+		print ('This wrapper script requires a destination folder specified...')
+		youtubedl_printehelp()
+		sys.exit(2)
+
+	try:
+		localopts_dict['toolpath']
+	except KeyError:
+		print ('This wrapper script requires a folder where tools are stored...')
+		youtubedl_printehelp()
+		sys.exit(2)
+	else:
+		os.chdir(localopts_dict['toolpath'])
+
+	try: 
+		localopts_dict['reslimit']
+	except KeyError:
+		# Assume 1080p if no resolution was specified
+		print ('No reslimit specified, defaulting to 1080p height limit')
+		localopts_dict['reslimit'] = '1080'
+				
+	print ('Input URL is:', localopts_dict['inputurl'])
+	
 	options = {
 		# We want youtube-dl to handle output
 		'verbose': 'true',
@@ -109,10 +137,9 @@ def youtubedl_setops(reslimit, formatext, destfolder):
 		'extract_flat': 'in_playlist',
 		#'writeannotations': 'true',
 		
-		'postprocessors': postprocessors,
 		'external_downloader': 'aria2c.exe',
 		'external_downloader_args': external_downloader_args,
-		'outtmpl': destfolder + youtubedl_video_template,
+		'outtmpl': localopts_dict['destfolder'] + youtubedl_video_template,
 		
 		# We want to handle our own output
 		#'verbose': 'false',
@@ -122,24 +149,40 @@ def youtubedl_setops(reslimit, formatext, destfolder):
 		'progress_hooks': [youtubedl_hook],
 	}
 	
+	try:
+		localopts_dict['postprocess']
+	except KeyError:
+		pass
+	else:
+		postprocessors = []
+		postprocessors.append({
+			'key': 'FFmpegEmbedSubtitle',
+		})
+		options['postprocessors'] = postprocessors
+		
 	print ('Setting outtmpl: %s' % options['outtmpl'])
 	#sys.exit()
-
-	# Set requested extensions
-	if formatext in ("mp4"):
-		videoext = 'mp4'
-		audioext = 'm4a'
-	elif formatext in ("webm"):
-		videoext = 'webm'
-		audioext = 'webm'
 		
 	try:
 		videoext
 	except NameError:
-		newformat = 'bestvideo[height<=' + reslimit + ']+bestaudio/best[height<=' + reslimit + ']'
+		newformat = ('bestvideo[height<=' 
+			+ localopts_dict['reslimit'] 
+			+ ']+bestaudio/best[height<=' 
+			+ localopts_dict['reslimit'] 
+			+ ']')
 	else:
-		newformat = 'bestvideo[height<=' + reslimit + '][ext=' + videoext + ']+bestaudio[ext=' + audioext + ']/best[ext=' + formatext + ']/best'
-		
+		newformat = ('bestvideo[height<=' 
+			+ localopts_dict['reslimit'] 
+			+ '][ext=' + localopts_dict['videoext'] 
+			+ ']+bestaudio[ext=' 
+			+ localopts_dict['audioext'] 
+			+ ']/best[ext=' 
+			+ localopts_dict['videoext'] 
+			+ ']/best[height<='
+			+ localopts_dict['reslimit']
+			+ ']')
+					
 	print ('Setting format: %s' % newformat)
 	options['format'] = newformat
 
@@ -163,14 +206,14 @@ def youtubedl_setops(reslimit, formatext, destfolder):
 	#	newformat = 'bestvideo[height<=1440]+bestaudio/best[height<=1440]'
 	
 	return options
-
-
+	
 def main(argv):
 
-	print (argv)
+	# print (argv)
 	try:
-		options, remainder = getopt.getopt(argv, 'hlf:u:d:r:t:', ['help',
+		options, remainder = getopt.getopt(argv, 'hlpf:u:d:r:t:', ['help',
 			'listformats',
+			'postprocess',
 			'formatext=',
 			'url=', 
 			'destination=',
@@ -178,77 +221,48 @@ def main(argv):
 			'toolpath=',])
 	except getopt.GetoptError:
 		print ('getopt.GetoptError exception!')
+
+		print ('  Commandline debug:')
+		print ('    OPTIONS   :', options)
+		print ('    REMAINING :', remainder)
 		
 		youtubedl_printehelp()
 		sys.exit(2)
-		
+
+	localopts = dict()
 	for opt, arg in options:
 		if opt in ("-h", "--help"):
 			youtubedl_printehelp()
 			sys.exit()
 		elif opt in ("-l", "--listformats"):
-			listformats = 'true'
+			localopts['listformats'] = 'true'
+		elif opt in ("-p", "--postprocess"):
+			localopts['postprocess'] = 'true'
 		elif opt in ("-f", "--formatext"):
-			formatext = arg
+			if arg in ('mp4'):
+				localopts['videoext'] = 'mp4'
+				localopts['audioext'] = 'm4a'
+			elif arg in ('webm'):
+				localopts['videoext'] = 'webm'
+				localopts['audioext'] = 'webm'
 		elif opt in ("-u", "--url"):
-			inputurl = arg
+			localopts['inputurl'] = arg
 		elif opt in ("-d", "--destination"):
-			destfolder = arg
+			localopts['destfolder'] = arg
 		elif opt in ("-r", "--reslimit"):
-			reslimit = arg
+			localopts['reslimit'] = arg
 		elif opt in ("-t", "--toolpath"):
-			toolpath = arg
-	try: 
-		inputurl
-	except NameError:
-		print ('This wrapper script requires a url specified...')
-		print ('')
-		print ('  Commandline debug:')
-		print ('    OPTIONS   :', options)
-		print ('    REMAINING :', remainder)
-		youtubedl_printehelp()
-		sys.exit(2)
+			localopts['toolpath'] = arg
 
-	print ('Input URL is:', inputurl)
+	youtubedl_opts = youtubedl_setops(localopts)
 
-	try: 
-		destfolder
-	except NameError:
-		print ('This wrapper script requires a destination folder specified...')
-		print ('')
-		youtubedl_printehelp()
-		sys.exit(2)
-
-	print ('Destination folder is:', destfolder)
+	print ('Preparing YoutubeDL object')
+	ydl = youtube_dl.YoutubeDL(youtubedl_opts)
+	ydl.add_default_info_extractors()
 
 	try:
-		toolpath
-	except NameError:
-		print ('This wrapper script requires a folder where tools are stored...')
-		print ('')
-		youtubedl_printehelp()
-		sys.exit(2)
-	else:
-		os.chdir(toolpath)
-	
-	try:
-		formatext
-	except NameError:
-		# Just make the routine not care if not specified
-		formatext = 'default'
-
-	try: 
-		reslimit
-	except NameError:
-		# Assume 1080p if no resolution was specified
-		print ('No reslimit specified, defaulting to 1080p height limit')
-		reslimit = '1080'
-
-	youtubedl_opts = youtubedl_setops(reslimit, formatext, destfolder)
-
-	try:
-		listformats
-	except NameError:
+		localopts['listformats']
+	except KeyError:
 		pass
 	else:
 		print ('Will attempt to list formats...')
@@ -257,22 +271,19 @@ def main(argv):
 			inputurl,
 			download=False # We just want to extract the info
 		)
+		input ('Press enter to continue...')
 		sys.exit()
-
-	print ('Preparing YoutubeDL object')
-	ydl = youtube_dl.YoutubeDL(youtubedl_opts)
-	ydl.add_default_info_extractors()
 
 	with ydl:
 		print ('Grabbing video/playlist information...')
 		result = ydl.extract_info(
-			inputurl,
+			localopts['inputurl'],
 			download=False # We just want to extract the info
 		)
 
 		if 'entries' in result:
 			# Change output template to reflect playlists
-			ydl.params['outtmpl'] = destfolder + youtubedl_playlist_template
+			ydl.params['outtmpl'] = localopts['destfolder'] + youtubedl_playlist_template
 
 			# Special handling for playlists (channel leeching)
 			# ydl.params['simulate'] = 'true'
@@ -295,7 +306,7 @@ def main(argv):
 				print ('Result given is %s' % result)
 				if (result > 0):
 					print ('Uh oh! Something went wrong somewhere...')
-					input('Press Enter to continue...')
+					input('Press enter to continue...')
 					sys.exit(result)
 
 		else:
@@ -308,13 +319,13 @@ def main(argv):
 		
 			# Now actually download
 			# ydl.params['simulate'] = 'true'
-			result = ydl.download([inputurl])
+			result = ydl.download([localopts['inputurl']])
 			print ('Result given is %s' % result)
 			#for key, value in result.items() :
 			#	write_string ("key: %s value: %s\n" % (key, value))
 			if (result > 0):
 				print ('Uh oh! Something went wrong somewhere...')
-				input('Press Enter to continue...')
+				input('Press enter to continue...')
 			
 			sys.exit(result)
 
