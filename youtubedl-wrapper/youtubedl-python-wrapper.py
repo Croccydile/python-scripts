@@ -34,12 +34,17 @@ class youtubedl_logger(object):
 		write_string('ERROR: %s\n' % msg)
 
 def youtubedl_hook(progress):
-	return
-	if progress['status'] == 'finished':
-		print ('Done downloading, now converting ...')
-	# write_string ('HOOK: %s\n' % progress['downloaded_bytes'])
-	for key, value in progress.items() :
-		print (key)
+	#if progress['status'] == 'finished':
+	#	print ('Done downloading, now converting ...')
+	#write_string ('HOOK: %s\n' % progress['downloaded_bytes'])
+	try:
+		progress['frag_index']
+	except KeyError:
+		pass
+	else:
+		write_string ('Downloaded %s of %s fragments' % (progress['frag_index'], progress['frag_count']))
+	#for key, value in progress.items() :
+	#	print (key)
 
 def youtubedl_writeinfo(video):
 	for key, value in video.items():
@@ -114,8 +119,6 @@ def youtubedl_setops(localopts_dict):
 	print ('Input URL is:', localopts_dict['inputurl'])
 	
 	options = {
-		# We want youtube-dl to handle output
-		'verbose': 'true',
 		'nooverwrites': 'true',
 		'ignoreerrors': 'true',
 		'continuedl': 'true',
@@ -141,9 +144,11 @@ def youtubedl_setops(localopts_dict):
 		'external_downloader_args': external_downloader_args,
 		'outtmpl': localopts_dict['destfolder'] + youtubedl_video_template,
 		
+		# We want youtube-dl to handle output
+		# 'verbose': 'true',
 		# We want to handle our own output
-		#'verbose': 'false',
-		#'quiet': 'true',
+		'verbose': 'false',
+		'quiet': 'true',
 
 		'logger': youtubedl_logger(),
 		'progress_hooks': [youtubedl_hook],
