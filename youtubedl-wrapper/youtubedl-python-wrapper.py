@@ -359,7 +359,6 @@ def main(argv):
 							print ('*** Removing postprocessors option for twitch extractor ***')
 							ydl.params.pop('postprocessors', None)
 			
-			sys.exit()
 			# Now actually download
 			# ydl.params['simulate'] = 'true'
 			result = ydl.download([localopts['inputurl']])
@@ -370,6 +369,7 @@ def main(argv):
 				print ('Uh oh! Something went wrong somewhere...')
 				input('Press enter to continue...')
 			
+			# input('Press enter to continue...')
 			sys.exit(result)
 
 if __name__ == "__main__":
