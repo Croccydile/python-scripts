@@ -187,8 +187,8 @@ def youtubedl_setops(localopts_dict):
 	#sys.exit()
 		
 	try:
-		videoext
-	except NameError:
+		localopts_dict['videoext']
+	except KeyError:
 		newformat = ('bestvideo[height<=' 
 			+ localopts_dict['reslimit'] 
 			+ ']+bestaudio/best[height<=' 
@@ -313,27 +313,34 @@ def main(argv):
 
 			# Special handling for playlists (channel leeching)
 			# ydl.params['simulate'] = 'true'
-			for video in result['entries']:
+			playlist_length = len(result['entries'])
+			for index, video in enumerate(result['entries']):
 				# Spam out some of the info returned
 				#youtubedl_writeinfo(result)
 				#print (video)
+
 				# Along with the available formats
 				#ydl.list_formats(result)
 				#print('Video #%d: %s' % (video['playlist_index'], video['title']))
 	
-				print('Playlist video: %s' % (video['title']))
+				write_string ('Playlist video: %s' % (video['title']))
 				result = ydl.extract_info(
 					video['url'],
 					download=False # We just want to extract the info
 				)
 				# Spam out some of the info returned
 				youtubedl_writeinfo(result)
-				result = ydl.download([video['url']])
-				print ('Result given is %s' % result)
-				if (result > 0):
-					print ('Uh oh! Something went wrong somewhere...')
-					input('Press enter to continue...')
-					sys.exit(result)
+				print (' ************ DOWNLOADING PLAYLIST VIDEO %s of %s ************ ' % (index+1, playlist_length))
+				for retry_count in range (0, 2):
+					result = ydl.download([video['url']])
+					print ('Result given is %s' % result)
+					if (result == 0):
+						break
+					else:
+						print ('Retry count %s' % retry_count)
+				#	print ('Uh oh! Something went wrong somewhere...')
+				#	input('Press enter to continue...')
+				#	sys.exit(result)
 
 		else:
 			# Just a single video
