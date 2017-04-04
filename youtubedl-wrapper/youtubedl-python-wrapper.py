@@ -15,13 +15,15 @@ import youtube_dl
 import sys, os, getopt
 
 class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    
+	HEADER = '\033[95m'
+	OKBLUE = '\033[94m'
+	OKGREEN = '\033[92m'
+	WARNING = '\033[93m'
+	FAIL = '\033[91m'
+	ENDC = '\033[0m'
+
+max_download_retries = 4
+
 class youtubedl_logger(object):
 	def debug(self, msg):
 		write_string('DEBUG: %s\n' % msg)
@@ -368,13 +370,21 @@ def main(argv):
 			
 			# Now actually download
 			# ydl.params['simulate'] = 'true'
-			result = ydl.download([localopts['inputurl']])
-			print ('Result given is %s' % result)
-			#for key, value in result.items() :
-			#	write_string ("key: %s value: %s\n" % (key, value))
+
+			for retry_count in range (1, max_download_retries):
+				print ('Retry count %s of %s' % (retry_count, max_download_retries))
+
+				result = ydl.download([localopts['inputurl']])
+				print ('Result given is %s' % result)
+				if (result == 0):
+					break
+
 			if (result > 0):
 				print ('Uh oh! Something went wrong somewhere...')
 				input('Press enter to continue...')
+
+			#for key, value in result.items() :
+			#	write_string ("key: %s value: %s\n" % (key, value))
 			
 			# input('Press enter to continue...')
 			sys.exit(result)
