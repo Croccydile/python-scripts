@@ -49,20 +49,23 @@ def youtubedl_hook(progress):
 	#	print (key)
 
 def youtubedl_writeinfo(video):
-	for key, value in video.items():
-		if key in ('title',
-			'extractor',
-			'protocol',
-			'description',
-			'id',
-			'format',
-			'uploader',
-			'upload_date',
-			'view_count',
-			'like_count',
-			'dislike_count',
-			'duration',):
-			write_string ('%s%-20s%s: %s\n' % (bcolors.WARNING, key, bcolors.ENDC, value))
+	try:
+		for key, value in video.items():
+			if key in ('title',
+				'extractor',
+				'protocol',
+				'description',
+				'id',
+				'format',
+				'uploader',
+				'upload_date',
+				'view_count',
+				'like_count',
+				'dislike_count',
+				'duration',):
+				write_string ('%s%-20s%s: %s\n' % (bcolors.WARNING, key, bcolors.ENDC, value))
+	except:
+		write_string ('OOPS: video.items() did not have anything')
 
 def youtubedl_printehelp():
 	print ('')
