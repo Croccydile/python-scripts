@@ -284,28 +284,25 @@ def main(argv):
 
 	# CHEAT: Always set this to ture for the moment
 	localopts['postprocess'] = 'true'
-	
+
 	youtubedl_opts = youtubedl_setops(localopts)
 
-	print ('Preparing YoutubeDL object')
-	ydl = youtube_dl.YoutubeDL(youtubedl_opts)
-	ydl.add_default_info_extractors()
+	with youtube_dl.YoutubeDL(youtubedl_opts) as ydl:
 
-	try:
-		localopts['listformats']
-	except KeyError:
-		pass
-	else:
-		print ('Will attempt to list formats...')
-		ydl = youtube_dl.YoutubeDL({'listformats': 'true'})
-		result = ydl.extract_info(
-			inputurl,
-			download=False # We just want to extract the info
-		)
-		input ('Press enter to continue...')
-		sys.exit()
+		try:
+			localopts['listformats']
+		except KeyError:
+			pass
+		else:
+			print ('Will attempt to list formats...')
+			ydl = youtube_dl.YoutubeDL({'listformats': 'true'})
+			result = ydl.extract_info(
+				inputurl,
+				download=False # We just want to extract the info
+			)
+			input ('Press enter to continue...')
+			sys.exit()
 
-	with ydl:
 		print ('Grabbing video/playlist information...')
 		result = ydl.extract_info(
 			localopts['inputurl'],
@@ -328,7 +325,7 @@ def main(argv):
 				#ydl.list_formats(result)
 				#print('Video #%d: %s' % (video['playlist_index'], video['title']))
 	
-				write_string ('Playlist video: %s' % (video['title']))
+				print ('Playlist video: %s' % (video['title']))
 				result = ydl.extract_info(
 					video['url'],
 					download=False # We just want to extract the info
@@ -357,7 +354,7 @@ def main(argv):
 		
 			#for key, value in result.items():
 			#	if key in ('subtitles'):
-			#		write_string ('Subtitles: %s\n' % value)
+			#		print ('Subtitles: %s\n' % value)
 			#		if isinstance (value, dict):
 			#			subext = youtubedl_walkdict_subext (value)
 			#			print ('Subtitles ext: %s\n' % subext) 
@@ -387,7 +384,7 @@ def main(argv):
 				input('Press enter to continue...')
 
 			#for key, value in result.items() :
-			#	write_string ("key: %s value: %s\n" % (key, value))
+			#	print ("key: %s value: %s\n" % (key, value))
 			
 			# input('Press enter to continue...')
 			sys.exit(result)
@@ -395,6 +392,7 @@ def main(argv):
 if __name__ == "__main__":
 #	try:
 	main(sys.argv[1:])
-#	except Exception as non_cuddle_exception:
-#		print (non_cuddle_exception)
-#		print ('This should not happen')
+	#except Exception as non_cuddle_exception:
+	#	print (non_cuddle_exception)
+	#	print ('This should not happen')
+	#	input ('You moron')
